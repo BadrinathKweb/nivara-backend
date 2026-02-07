@@ -7,18 +7,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/nivara/users")
 public class UserController {
     private final UserRepository userRepository;
     public UserController(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-    // ✅ Test API
-    @GetMapping("/hello")
-    public String hello() {
-        return "User API working!";
-    }
-
     // ✅ Get user by phone number
     @GetMapping("/by-phone/{phone}")
     public Optional<User> getByPhone(@PathVariable String phone) {

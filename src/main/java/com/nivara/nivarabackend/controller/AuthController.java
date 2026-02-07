@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/nivara/auth")
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -28,7 +28,6 @@ public class AuthController {
     // ✅ MUST MATCH token "aud"
     private static final String CLIENT_ID =
         "356977800679-c2n68dfl1ovkta4v93t08dg76dkft1n5.apps.googleusercontent.com";
-
          public AuthController(UserRepository userRepository, OtpService otpService) {
     this.userRepository = userRepository;
     this.otpService = otpService;
@@ -72,14 +71,16 @@ public class AuthController {
 
 
     @PostMapping("/otp/request")
-    public ResponseEntity<?> requestOtp(@RequestBody OtpRequestDto request) {
-        try {
-            otpService.sendOtp(request);
-            return ResponseEntity.ok("OTP sent successfully");
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body("Failed to send OTP: " + ex.getMessage());
-        }
+public ResponseEntity<?> requestOtp(@RequestBody OtpRequestDto request) {
+    try {
+        System.out.println("Received OTP request: " + request); // Add this
+        otpService.sendOtp(request);
+        return ResponseEntity.ok("OTP sent successfully");
+    } catch (Exception ex) {
+        ex.printStackTrace(); // Add this to see full stack trace
+        return ResponseEntity.badRequest().body("Failed to send OTP: " + ex.getMessage());
     }
+}
 
     @PostMapping("/otp/verify")
     public ResponseEntity<?> verifyOtp(@RequestBody OtpVerifyDto request) {

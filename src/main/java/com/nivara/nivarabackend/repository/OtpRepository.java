@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface OtpRepository extends JpaRepository<Otp, Long> {
 
     Optional<Otp> findTopByMobileNumberOrderByCreatedAtDesc(String mobileNumber);
+
+    Optional<Otp> findTopByEmailOrderByCreatedAtDesc(String email);
 }
