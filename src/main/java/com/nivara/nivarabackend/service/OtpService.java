@@ -4,7 +4,12 @@ import com.nivara.nivarabackend.dto.*;
 
 public interface OtpService {
 
-    void sendOtp(OtpRequestDto request);
+    void sendMobileOtp(String mobile);
 
-    AuthResponseDto verifyOtp(OtpVerifyDto request);
+    AuthResponseDto verifyMobileOtp(String mobile, String otp);
+
+    void sendEmailOtp(Long userId, String email);
+
+    void verifyEmailOtp(Long userId, String email, String otp);
+
 }

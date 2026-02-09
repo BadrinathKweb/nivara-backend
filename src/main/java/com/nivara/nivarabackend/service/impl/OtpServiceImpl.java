@@ -1,10 +1,13 @@
 package com.nivara.nivarabackend.service.impl;
 
+import com.nivara.nivarabackend.config.JwtUtil;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nivara.nivarabackend.dto.*;
-import com.nivara.nivarabackend.entity.Otp;
+import com.nivara.nivarabackend.entity.OtpType;
+import com.nivara.nivarabackend.entity.OtpVerification;
 import com.nivara.nivarabackend.repository.OtpRepository;
 import com.nivara.nivarabackend.repository.UserRepository;
 import com.nivara.nivarabackend.service.OtpService;
@@ -22,114 +25,123 @@ public class OtpServiceImpl implements OtpService {
     private final SmsService smsService;
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
-   public OtpServiceImpl(
+    public OtpServiceImpl(
             OtpRepository otpRepository,
             SmsService smsService,
             EmailService emailService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            JwtUtil jwtUtil) {
 
         this.otpRepository = otpRepository;
         this.smsService = smsService;
         this.emailService = emailService;
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
-   @Override
-    @Transactional
-    public void sendOtp(OtpRequestDto request) {
+    @Override
+    public void sendMobileOtp(String mobile) {
 
-        boolean hasMobile = request.getMobileNumber() != null;
-        boolean hasEmail = request.getEmail() != null;
+        String otp = generateOtp();
 
-        if (hasMobile == hasEmail) {
-            throw new RuntimeException("Provide either mobile number or email");
-        }
+        OtpVerification entity = new OtpVerification();
+        entity.setIdentifier(mobile);
+        entity.setType(OtpType.MOBILE);
+        entity.setOtpCode(otp);
+        entity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        entity.setVerified(false);
 
-        String generatedOtp =
-                String.format("%06d", new Random().nextInt(999999));
+        otpRepository.save(entity);
 
-        Otp otp = new Otp();
-        otp.setOtp(generatedOtp);
-        otp.setCreatedAt(LocalDateTime.now());
-        otp.setExpiresAt(LocalDateTime.now().plusMinutes(5));
-        otp.setVerified(false);
-
-        if (hasMobile) {
-            otp.setMobileNumber(request.getMobileNumber());
-            otp.setEmail(null);
-            otpRepository.save(otp);
-            smsService.sendOtp(request.getMobileNumber(), generatedOtp);
-        }
-
-        if (hasEmail) {
-            otp.setEmail(request.getEmail());
-            otp.setMobileNumber(null);
-            otpRepository.save(otp);
-            emailService.sendOtpEmail(request.getEmail(), generatedOtp);
-        }
+        System.err.println(otp);
+        //smsService.sendOtp(mobile, otp);
     }
 
-    // ---------------- VERIFY OTP ----------------
-     @Override
+    @Override
     @Transactional
-    public AuthResponseDto verifyOtp(OtpVerifyDto request) {
+    public AuthResponseDto verifyMobileOtp(String mobile, String otp) {
 
-        boolean hasMobile = request.getMobileNumber() != null;
-        boolean hasEmail = request.getEmail() != null;
-
-        if (hasMobile == hasEmail) {
-            throw new RuntimeException("Provide either mobile number or email");
-        }
-
-        Otp otpEntity;
-
-        if (hasMobile) {
-            otpEntity = otpRepository
-                .findTopByMobileNumberOrderByCreatedAtDesc(
-                    request.getMobileNumber())
+        OtpVerification entity = otpRepository
+                .findTopByIdentifierAndTypeAndVerifiedFalseOrderByIdDesc(
+                        mobile, OtpType.MOBILE)
                 .orElseThrow(() -> new RuntimeException("OTP not found"));
-        } else {
-            otpEntity = otpRepository
-                .findTopByEmailOrderByCreatedAtDesc(
-                    request.getEmail())
+
+        validateOtp(entity, otp);
+
+        entity.setVerified(true);
+
+        User user = userRepository.findByMobileNumber(mobile)
+                .orElseGet(() -> {
+                    User u = new User();
+                    u.setMobileNumber(mobile);
+                    u.setMobileVerified(true);
+                    return userRepository.save(u);
+                });
+
+        String token = jwtUtil.generateToken(user.getId());
+
+        return new AuthResponseDto(
+                token,
+                user.isEmailVerified(),
+                false
+        );
+    }
+
+    @Override
+    public void sendEmailOtp(Long userId, String email) {
+
+        userRepository.findByEmail(email)
+                .ifPresent(u -> {
+                    throw new RuntimeException("Email already exists");
+                });
+
+        String otp = generateOtp();
+
+        OtpVerification entity = new OtpVerification();
+        entity.setIdentifier(email);
+        entity.setType(OtpType.EMAIL);
+        entity.setOtpCode(otp);
+        entity.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        entity.setVerified(false);
+
+        otpRepository.save(entity);
+        System.out.println("Email : "+otp);
+
+        emailService.sendOtpEmail(email, otp);
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmailOtp(Long userId, String email, String otp) {
+
+        OtpVerification entity = otpRepository
+                .findTopByIdentifierAndTypeAndVerifiedFalseOrderByIdDesc(
+                        email, OtpType.EMAIL)
                 .orElseThrow(() -> new RuntimeException("OTP not found"));
-        }
 
-        if (otpEntity.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP expired");
-        }
+        validateOtp(entity, otp);
 
-        if (!otpEntity.getOtp().equals(request.getOtp())) {
+        entity.setVerified(true);
+
+        User user = userRepository.findById(userId).orElseThrow();
+
+        user.setEmail(email);
+        user.setEmailVerified(true);
+    }
+
+    private String generateOtp() {
+        return String.valueOf(new Random().nextInt(9000) + 1000);
+    }
+
+    private void validateOtp(OtpVerification entity, String otp) {
+
+        if (!entity.getOtpCode().equals(otp))
             throw new RuntimeException("Invalid OTP");
-        }
 
-        otpEntity.setVerified(true);
-        otpRepository.save(otpEntity);
-
-        // 🔹 Find or create user
-        User user;
-
-        if (hasMobile) {
-            user = userRepository.findByPhone(request.getMobileNumber())
-                .orElseGet(() -> {
-                    User u = new User();
-                    u.setPhone(request.getMobileNumber());
-                    return userRepository.save(u);
-                });
-        } else {
-            user = userRepository.findByEmail(request.getEmail())
-                .orElseGet(() -> {
-                    User u = new User();
-                    u.setEmail(request.getEmail());
-                    return userRepository.save(u);
-                });
-        }
-
-        // 🔹 TODO: replace with real JWT
-        String fakeToken = "sample-jwt-token";
-
-        return new AuthResponseDto(fakeToken,
-                hasMobile ? request.getMobileNumber() : request.getEmail());
+        if (entity.getExpiresAt().isBefore(LocalDateTime.now()))
+            throw new RuntimeException("OTP expired");
     }
 }
+

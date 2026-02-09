@@ -26,19 +26,22 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-     http
-        .csrf(csrf -> csrf.disable())
-        .sessionManagement(session -> 
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(auth -> auth
-            // Public endpoints - authentication/OTP related
-            .requestMatchers("/nivara/**").permitAll()
-            
-            // All other endpoints require authentication
-            .anyRequest().authenticated()
-        )
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/nivara/auth/otp/request", "/nivara/auth/otp/verify")
+                        .permitAll()
+                        .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(401);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        }))
 
-    return http.build();
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
+
 }

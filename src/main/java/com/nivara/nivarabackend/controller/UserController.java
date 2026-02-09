@@ -16,7 +16,7 @@ public class UserController {
     // ✅ Get user by phone number
     @GetMapping("/by-phone/{phone}")
     public Optional<User> getByPhone(@PathVariable String phone) {
-        return userRepository.findByPhone(phone); // match entity field name
+        return userRepository.findByMobileNumber(phone); // match entity field name
     }
 
     // ✅ Create user
