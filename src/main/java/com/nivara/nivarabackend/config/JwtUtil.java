@@ -8,7 +8,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET = "your-secret-key-change-this";
+    private final String SECRET = "mySuperSecretKeyForJwtTokenGeneration123456";
     private final long EXPIRATION = 1000 * 60 * 60 * 24; // 1 day
 
     public String generateToken(Long userId) {
@@ -20,14 +20,14 @@ public class JwtUtil {
                 .compact();
     }
 
-    public Long extractUserId(String token) {
-        return Long.parseLong(
-                Jwts.parser()
-                        .setSigningKey(SECRET)
-                        .parseClaimsJws(token)
-                        .getBody()
-                        .getSubject()
-        );
+    public String getUserId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(SECRET)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.getSubject(); // returns "sub" value from token
     }
 
     public boolean validate(String token) {

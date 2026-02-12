@@ -25,18 +25,27 @@ public class TwilioWhatsappServiceImpl implements SmsService {
     @Override
     public void sendOtp(String mobile, String otp) {
 
-        System.out.println("twillo");
+        try {
+            System.out.println(" Sending WhatsApp OTP...");
 
-        Twilio.init(accountSid, authToken);
+            Twilio.init(accountSid, authToken);
 
-        String message = "Your OTP is " + otp + ". Do not share it.";
+            String message = "Your OTP is " + otp + ". Do not share it.";
 
-        Message.creator(
-                new PhoneNumber("whatsapp:+91" + mobile), // recipient
-                new PhoneNumber(fromNumber),              // Twilio sandbox
-                message
-        ).create();
+            Message.creator(
+                    new PhoneNumber("whatsapp:+91" + mobile),
+                    new PhoneNumber(fromNumber),
+                    message
+            ).create();
 
-        System.out.println("WhatsApp OTP sent to " + mobile);
+            System.out.println("WhatsApp OTP sent to " + mobile);
+
+        } catch (Exception e) {
+
+            System.out.println(" Twilio send failed");
+            e.printStackTrace();
+            System.out.println("Fallback OTP (dev only): " + otp);
+        }
     }
 }
+

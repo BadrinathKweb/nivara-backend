@@ -1,59 +1,52 @@
 package com.nivara.nivarabackend.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-     @Column(unique = true)
-    private String phone;
-
-    @Column(nullable = false)
-    private String name;
+    @Column(unique = true, nullable = false, length = 15)
+    private String mobileNumber;
 
     @Column(unique = true)
     private String email;
 
-    public User() {
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Builder.Default
+    private boolean mobileVerified = false;
+
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+
+    //  One-to-One mapping
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserInfo userInfo;
+
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
     }
 
-    public User(String name, String email,String phone) {
-        this.name = name;
-        this.email = email;
-        this.phone=phone;
-    }
-    
-    // getters & setters
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-    public String getphoneNumber() {
-        return phone;
-    }
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-     public void setEmail(String email) {
-        this.email = email;
-    }
-     public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getEmail() {
-        return email;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }
