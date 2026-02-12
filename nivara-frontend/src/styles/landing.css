@@ -1,0 +1,84 @@
+/* Full Page Background - Light Pista Theme */
+.app-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #e8f7ee, #c7f0d8);
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Card */
+.content-card {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 50px 65px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  transform: translateY(-8px);
+}
+
+/* Logo */
+.logo {
+  width: 360px;        /* increase size */
+  height: auto;        /* keep proportions */
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.15)); /* premium glow */
+  transition: transform 0.3s ease;
+}
+
+
+/* Title */
+.title {
+  font-size: 34px;
+  color: #2d6a4f;
+  margin-bottom: 8px;
+}
+
+/* Subtitle */
+.subtitle {
+  color: #52796f;
+  margin-bottom: 30px;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.primary-btn {
+  background: #52b788;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.primary-btn:hover {
+  background: #40916c;
+  transform: scale(1.05);
+}
+
+.secondary-btn {
+  background: transparent;
+  border: 2px solid #52b788;
+  color: #2d6a4f;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.secondary-btn:hover {
+  background: #52b788;
+  color: white;
+}
